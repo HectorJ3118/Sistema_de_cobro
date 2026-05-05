@@ -11,6 +11,7 @@ class BoardDroidApp:
         self.root.title("Panel de Control BoardDroid ")
         self.root.geometry("600x650")
         self.root.configure(padx=10, pady=10)
+        self.procesando_billete = False
 
         # Variables de estado
         self.ser = None
