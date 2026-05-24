@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Personal - BoardDroid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-8 font-sans">
+
+    <div class="max-w-5xl mx-auto">
+        <header class="flex justify-between items-center mb-8 border-b border-gray-700 pb-4">
+            <h1 class="text-3xl font-bold text-blue-400">Módulo de Personal Gerencial</h1>
+            <button onclick="window.close()" class="bg-gray-700 hover:bg-gray-600 text-white py-2 px-4 rounded-lg transition">Cerrar Ventana</button>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg h-fit">
+                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-4 border-b border-gray-700 pb-2">Registrar Colaborador</h3>
+                
+                <label class="block text-xs text-gray-400 mb-1">Nombre Completo</label>
+                <input type="text" id="nuevoNombre" class="w-full bg-gray-900 border border-gray-600 p-2 rounded mb-3 outline-none">
+                
+                <label class="block text-xs text-gray-400 mb-1">PIN de Acceso (Numérico)</label>
+                <input type="text" id="nuevoPin" class="w-full bg-gray-900 border border-gray-600 p-2 rounded mb-3 font-mono tracking-widest text-center">
+                
+                <label class="block text-xs text-gray-400 mb-1">Privilegios de Sistema</label>
+                <select id="nuevoRol" class="w-full bg-gray-900 border border-gray-600 p-2 rounded mb-4 outline-none">
+                    <option value="cajero">Cajero estándar</option>
+                    <option value="admin">Administrador global</option>
+                </select>
+                
+                <button onclick="guardarEmpleado()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl uppercase text-sm shadow-lg transition">Asentar Registro</button>
+            </div>
+
+            <div class="md:col-span-2 bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-4 border-b border-gray-700 pb-2">Plantilla Corporativa</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm text-left">
+                        <thead>
+                            <tr class="text-gray-400 border-b border-gray-700">
+                                <th class="pb-2">ID</th>
+                                <th class="pb-2">Nombre</th>
+                                <th class="pb-2">Nivel</th>
+                                <th class="pb-2">Estatus</th>
+                                <th class="pb-2 text-center">Modificación</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaEmpleados"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function cargarTablaEmpleados() {
+            const res = await fetch('/api/todos_los_empleados');
+            const data = await res.json();
+            const tbody = document.getElementById('tablaEmpleados');
+            tbody.innerHTML = '';
+
+            data.empleados.forEach(emp => {
+                let badgeRol = emp.rol === 'admin' ? '<span class="bg-purple-900 text-purple-300 text-xs px-2 py-0.5 rounded border border-purple-700">ADMIN</span>' : '<span class="bg-blue-900 text-blue-300 text-xs px-2 py-0.5 rounded border border-blue-700">CAJERO</span>';
+                let badgeEst = emp.activo ? '<span class="text-green-400 font-bold">Activo</span>' : '<span class="text-red-400 font-bold">Inactivo</span>';
+                let btn = emp.activo ? `<button onclick="cambiarEstado(${emp.id}, 0)" class="bg-red-900/40 hover:bg-red-800 text-red-300 border border-red-700 px-2 py-1 rounded text-xs transition">Baja</button>` : `<button onclick="cambiarEstado(${emp.id}, 1)" class="bg-gray-700 hover:bg-gray-600 text-gray-300 border border-gray-500 px-2 py-1 rounded text-xs transition">Alta</button>`;
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-gray-700/50 hover:bg-gray-800/30">
+                        <td class="py-3 text-gray-500">#${emp.id}</td>
+                        <td class="py-3 font-bold">${emp.nombre}</td>
+                        <td class="py-3">${badgeRol}</td>
+                        <td class="py-3">${badgeEst}</td>
+                        <td class="py-3 text-center">${btn}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function guardarEmpleado() {
+            const nombre = document.getElementById('nuevoNombre').value;
+            const pin = document.getElementById('nuevoPin').value;
+            const rol = document.getElementById('nuevoRol').value;
+            if(!nombre || !pin) return alert("Completa los datos");
+
+            const res = await fetch('/api/agregar_empleado', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nombre, pin, rol}) });
+            if(res.ok) {
+                alert("Empleado registrado.");
+                document.getElementById('nuevoNombre').value = '';
+                document.getElementById('nuevoPin').value = '';
+                cargarTablaEmpleados();
+            }
+        }
+
+        async function cambiarEstado(id, activo) {
+            if(!confirm("¿Modificar el estatus de este registro?")) return;
+            const res = await fetch('/api/desactivar_empleado', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, activo}) });
+            if(res.ok) cargarTablaEmpleados();
+        }
+
+        window.onload = cargarTablaEmpleados;
+    </script>
+</body>
+</html>

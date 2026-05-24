@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Analítico - BoardDroid</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-8 font-sans">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-gray-700 pb-6 gap-4">
+            <div>
+                <div class="flex items-center space-x-3 mb-2">
+                    <h1 class="text-3xl font-bold text-blue-400">Panel de Control Gerencial</h1>
+                    <span class="relative flex h-3 w-3">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                        <span class="relative inline-full rounded-full h-3 w-3 bg-green-500"></span>
+                    </span>
+                </div>
+                <p class="text-gray-500 text-sm">Auditoría financiera y métricas asíncronas en tiempo real</p>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+            <button onclick="realizarCorteCaja()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-bold transition border border-red-500 shadow-lg">
+                ✂️ Corte de Caja (Z-Report)
+            </button>
+            <a href="/empleados" target="_blank" class="bg-gray-700 hover:bg-gray-600 text-white px-5 py-2 rounded-lg font-bold transition border border-gray-600 shadow-lg">
+                👥 Control Personal
+            </a >
+            <button onclick="window.close()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm border border-gray-600 transition">
+                🚪 Destruir Pestaña
+            </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg flex flex-col items-center">
+                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Ingresos Brutos del Turno</h3>
+                <span id="metricTotalHoy" class="text-5xl font-black text-green-500">$0.00</span>
+            </div>
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg flex flex-col items-center">
+                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Transacciones Registradas</h3>
+                <span id="metricTransacciones" class="text-5xl font-black text-blue-500">0</span>
+            </div>
+        </div>
+
+        <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg mb-6">
+            <h3 class="text-gray-400 text-md uppercase tracking-wider mb-6 text-center">Productividad por Operador</h3>
+            <div class="relative h-72 w-full flex justify-center">
+                <canvas id="graficaVendedores"></canvas>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 class="text-gray-400 text-md uppercase tracking-wider mb-6 text-center">Historial de Tendencia Semanal</h3>
+                <div class="relative h-64 w-full flex justify-center">
+                    <canvas id="graficaTiempo"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 class="text-gray-400 text-md uppercase tracking-wider mb-6 text-center">Distribución de Canales de Cobro</h3>
+                <div class="relative h-64 w-full flex justify-center">
+                    <canvas id="graficaMetodos"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let chartVendedores = null;
+        let chartTiempo = null;
+        let chartMetodos = null;
+
+        async function cargarMetricas() {
+            try {
+                const res = await fetch('/api/metricas');
+                const data = await res.json();
+
+                document.getElementById('metricTotalHoy').innerText = `$${parseFloat(data.hoy).toFixed(2)}`;
+                document.getElementById('metricTransacciones').innerText = data.transacciones;
+
+                // 1. Render Barras (Vendedores)
+                const labelsVend = data.por_vendedor.map(v => v.nombre);
+                const valuesVend = data.por_vendedor.map(v => v.total_vendido);
+                const ctxVend = document.getElementById('graficaVendedores').getContext('2d');
+                if (chartVendedores) chartVendedores.destroy();
+                chartVendedores = new Chart(ctxVend, {
+                    type: 'bar',
+                    data: {
+                        labels: labelsVend,
+                        datasets: [{ label: 'Ventas ($)', data: valuesVend, backgroundColor: 'rgba(59, 130, 246, 0.6)', borderColor: '#3B82F6', borderWidth: 1, borderRadius: 4 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { color: '#374151' } } } }
+                });
+
+                // 2. Render Línea (Tendencia Temporal)
+                const labelsTime = data.ventas_tiempo.map(v => v.fecha);
+                const valuesTime = data.ventas_tiempo.map(v => v.total);
+                const ctxTime = document.getElementById('graficaTiempo').getContext('2d');
+                if (chartTiempo) chartTiempo.destroy();
+                chartTiempo = new Chart(ctxTime, {
+                    type: 'line',
+                    data: {
+                        labels: labelsTime,
+                        datasets: [{ label: 'Flujo ($)', data: valuesTime, borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.1)', fill: true, tension: 0.3 }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+
+                // 3. Render Dona (Métodos de Pago)
+                const labelsMet = data.por_metodo.map(m => m.metodo.toUpperCase());
+                const valuesMet = data.por_metodo.map(m => m.total);
+                const ctxMet = document.getElementById('graficaMetodos').getContext('2d');
+                if (chartMetodos) chartMetodos.destroy();
+                
+                const colores = labelsMet.map(m => m === 'EFECTIVO' ? '#22C55E' : (m === 'TARJETA' ? '#6366F1' : '#14B8A6'));
+                chartMetodos = new Chart(ctxMet, {
+                    type: 'doughnut',
+                    data: { labels: labelsMet, datasets: [{ data: valuesMet, backgroundColor: colores, borderWidth: 0 }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+
+            } catch (e) { console.error("Fallo de refresco analítico:", e); }
+        }
+
+        async function realizarCorteCaja() {
+            let pin = prompt("🔒 AUTENTICACIÓN DIRECTA:\nIntroduce PIN de Administrador para cerrar turno:");
+            if(!pin) return;
+            const res = await fetch('/api/corte_caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({pin}) });
+            const data = await res.json();
+            if(res.ok) {
+                alert("Corte generado. Descargando auditoría...");
+                window.open(data.pdf_url, "_blank");
+                cargarMetricas();
+            } else { alert(data.msg); }
+        }
+
+        async function cerrarSesionAdmin() {
+            await fetch('/api/logout_admin', { method: 'POST' });
+            window.location.href = '/';
+        }
+
+        socket.on('notificar_nueva_venta', () => { cargarMetricas(); });
+        window.onload = cargarMetricas;
+    </script>
+</body>
+</html>
