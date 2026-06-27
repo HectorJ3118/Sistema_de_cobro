@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard Analítico - BoardDroid</title>
+    <title>Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
@@ -13,41 +13,41 @@
         <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-gray-700 pb-6 gap-4">
             <div>
                 <div class="flex items-center space-x-3 mb-2">
-                    <h1 class="text-3xl font-bold text-blue-400">Panel de Control Gerencial</h1>
+                    <h1 class="text-3xl font-bold text-blue-400">Panel de Control </h1>
                     <span class="relative flex h-3 w-3">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                         <span class="relative inline-full rounded-full h-3 w-3 bg-green-500"></span>
                     </span>
                 </div>
-                <p class="text-gray-500 text-sm">Auditoría financiera y métricas asíncronas en tiempo real</p>
+                <p class="text-gray-500 text-sm">Métricas en tiempo real</p>
             </div>
 
             <div class="flex flex-wrap gap-3">
             <button onclick="realizarCorteCaja()" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2 rounded-lg font-bold transition border border-red-500 shadow-lg">
-                ✂️ Corte de Caja (Z-Report)
+                 Corte de Caja 
             </button>
             <a href="/empleados" target="_blank" class="bg-gray-700 hover:bg-gray-600 text-white px-5 py-2 rounded-lg font-bold transition border border-gray-600 shadow-lg">
-                👥 Control Personal
+                 Control Personal
             </a >
             <button onclick="window.close()" class="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm border border-gray-600 transition">
-                🚪 Destruir Pestaña
+                Cerrar ventana
             </button>
             </div>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg flex flex-col items-center">
-                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Ingresos Brutos del Turno</h3>
+                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Ingresos del turno </h3>
                 <span id="metricTotalHoy" class="text-5xl font-black text-green-500">$0.00</span>
             </div>
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg flex flex-col items-center">
-                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Transacciones Registradas</h3>
+                <h3 class="text-gray-400 text-sm uppercase tracking-wider mb-2">Ventas Registradas</h3>
                 <span id="metricTransacciones" class="text-5xl font-black text-blue-500">0</span>
             </div>
         </div>
 
         <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg mb-6">
-            <h3 class="text-gray-400 text-md uppercase tracking-wider mb-6 text-center">Productividad por Operador</h3>
+            <h3 class="text-gray-400 text-md uppercase tracking-wider mb-6 text-center">Ventas por cajera</h3>
             <div class="relative h-72 w-full flex justify-center">
                 <canvas id="graficaVendedores"></canvas>
             </div>
@@ -55,14 +55,14 @@
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                <h3 class="text-gray-400 text-md uppercase tracking-wider mb-6 text-center">Historial de Tendencia Semanal</h3>
+                <h3 class="text-gray-400 text-md uppercase tracking-wider mb-6 text-center">Historial Semanal</h3>
                 <div class="relative h-64 w-full flex justify-center">
                     <canvas id="graficaTiempo"></canvas>
                 </div>
             </div>
 
             <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                <h3 class="text-gray-400 text-md uppercase tracking-wider mb-6 text-center">Distribución de Canales de Cobro</h3>
+                <h3 class="text-gray-400 text-md uppercase tracking-wider mb-6 text-center">Desglose de pagos</h3>
                 <div class="relative h-64 w-full flex justify-center">
                     <canvas id="graficaMetodos"></canvas>
                 </div>
@@ -129,12 +129,12 @@
         }
 
         async function realizarCorteCaja() {
-            let pin = prompt("🔒 AUTENTICACIÓN DIRECTA:\nIntroduce PIN de Administrador para cerrar turno:");
+            let pin = prompt("Introduce PIN de Administrador para cerrar turno:");
             if(!pin) return;
             const res = await fetch('/api/corte_caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({pin}) });
             const data = await res.json();
             if(res.ok) {
-                alert("Corte generado. Descargando auditoría...");
+                alert("Corte generado.");
                 window.open(data.pdf_url, "_blank");
                 cargarMetricas();
             } else { alert(data.msg); }

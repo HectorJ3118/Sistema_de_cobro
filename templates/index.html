@@ -11,10 +11,10 @@
 
     <aside class="w-1/4 bg-gray-800 border-r border-gray-700 flex flex-col justify-between p-6 z-20">
         <div>
-            <h1 class="text-2xl font-bold text-green-400 mb-6 border-b border-gray-600 pb-2">BoardDroid POS</h1>
+            <h1 class="text-2xl font-bold text-green-400 mb-6 border-b border-gray-600 pb-2">MISCELANEA SUSY</h1>
             
             <div id="panelHardwareWrapper" class="mb-6 bg-gray-900 p-4 rounded-xl border border-gray-700">
-                <h3 class="text-gray-400 text-sm font-bold uppercase mb-2">Hardware MDB</h3>
+                <h3 class="text-gray-400 text-sm font-bold uppercase mb-2">PUERTO</h3>
                 <select id="puertosSelect" class="w-full bg-gray-700 text-white rounded p-2 mb-2 outline-none"></select>
                 <div class="flex gap-2">
                     <button onclick="conectarHardware()" id="btnConectar" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded transition">Conectar</button>
@@ -24,34 +24,34 @@
             </div>
 
             <div id="cajaLogin" class="mb-6 bg-gray-900 p-4 rounded-xl border border-gray-700">
-                <h3 class="text-gray-400 text-sm font-bold uppercase mb-2">Operador</h3>
+                <h3 class="text-gray-400 text-sm font-bold uppercase mb-2">Cajera</h3>
                 <select id="vendedorSelect" class="w-full bg-gray-700 text-white rounded p-2 mb-2 outline-none"></select>
                 <input type="password" id="inputPin" placeholder="PIN de Seguridad" class="w-full bg-gray-800 border border-gray-600 text-white p-2 rounded mb-2 text-center tracking-widest outline-none">
-                <button onclick="iniciarSesion()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition">Abrir Turno</button>
+                <button onclick="iniciarSesion()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded font-bold transition">Iniciar Turno</button>
             </div>
 
             <div id="cajaActivo" class="hidden mb-6 bg-green-900/30 p-4 rounded-xl border border-green-700 text-center">
                 <h3 class="text-green-400 text-sm font-bold uppercase mb-1">Turno Activo</h3>
                 <p id="nombreCajero" class="text-2xl font-bold text-white mb-2">-</p>
-                <button onclick="pedirPinAdmin('cerrar_turno')" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded text-sm transition">Cerrar Turno (Req. Admin)</button>
+                <button onclick="pedirPinAdmin('cerrar_turno')" class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded text-sm transition">Cerrar Turno </button>
             </div>
 
             <div class="bg-gray-900 p-4 rounded-xl border border-gray-700">
                 <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-gray-400 text-sm font-bold uppercase">Tubos de Cambio</h3>
+                    <h3 class="text-gray-400 text-sm font-bold uppercase">Monedas</h3>
                     <button onclick="pedirInventario()" class="text-xs bg-gray-700 hover:bg-gray-600 px-2 py-1 rounded">Refrescar</button>
                 </div>
                 <ul id="listaInventario" class="space-y-2 font-mono text-sm">
-                    <li class="flex justify-between"><span class="text-gray-400">Denominación $10:</span><span id="inv-10" class="font-bold text-blue-400">0</span></li>
-                    <li class="flex justify-between"><span class="text-gray-400">Denominación $5:</span><span id="inv-5" class="font-bold text-blue-400">0</span></li>
-                    <li class="flex justify-between"><span class="text-gray-400">Denominación $2:</span><span id="inv-2" class="font-bold text-blue-400">0</span></li>
-                    <li class="flex justify-between"><span class="text-gray-400">Denominación $1:</span><span id="inv-1" class="font-bold text-blue-400">0</span></li>
+                    <li class="flex justify-between"><span class="text-gray-400">Monedas $10:</span><span id="inv-10" class="font-bold text-blue-400">0</span></li>
+                    <li class="flex justify-between"><span class="text-gray-400">Monedas $5:</span><span id="inv-5" class="font-bold text-blue-400">0</span></li>
+                    <li class="flex justify-between"><span class="text-gray-400">Monedas $2:</span><span id="inv-2" class="font-bold text-blue-400">0</span></li>
+                    <li class="flex justify-between"><span class="text-gray-400">Monedas $1:</span><span id="inv-1" class="font-bold text-blue-400">0</span></li>
                 </ul>
             </div>
         </div>
 
         <button onclick="pedirPinAdmin('dashboard')" class="w-full bg-blue-900/50 hover:bg-blue-800 text-blue-100 py-3 rounded-xl font-bold transition flex items-center justify-center gap-2 mt-4 border border-blue-700 shadow-lg">
-            📊 Ir al Dashboard Admin
+             Ir al Dashboard 
         </button>
     </aside>
 
@@ -59,43 +59,43 @@
         
         <div id="bloqueadorPOS" class="absolute inset-0 bg-gray-900/95 backdrop-blur-sm flex flex-col items-center justify-center z-10">
             <span class="text-6xl mb-4">🔒</span>
-            <h2 class="text-3xl font-bold text-gray-400 uppercase tracking-wider">Terminal Inactiva</h2>
-            <p class="text-gray-500 mt-2">Introduce las credenciales del operador en la barra lateral para iniciar.</p>
+            <h2 class="text-3xl font-bold text-gray-400 uppercase tracking-wider">Pago inactivo</h2>
+            <p class="text-gray-500 mt-2">Selecciona el usuario e ingresa el código.</p>
         </div>
 
         <div class="w-full max-w-2xl flex flex-col gap-6">
             <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-2xl flex flex-col items-center">
-                <label class="text-xl font-bold text-gray-400 mb-4 uppercase tracking-widest">Monto a Liquidar</label>
+                <label class="text-xl font-bold text-gray-400 mb-4 uppercase tracking-widest">TOTAL</label>
                 <div class="flex items-center space-x-4 mb-4">
                     <span class="text-5xl font-bold text-blue-500">$</span>
                     <input type="number" id="inputCobro" placeholder="0.00" class="bg-gray-900 border-2 border-gray-600 text-blue-400 text-6xl font-bold font-mono rounded-xl focus:ring-blue-500 block w-64 p-3 text-center outline-none">
                 </div>
                 <div class="flex gap-3 w-full">
                     <button id="btnIniciarVenta" onclick="iniciarVenta()" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold py-4 rounded-xl uppercase shadow-lg transition">
-                        Habilitar Cobro
+                        COBRAR
                     </button>
                     <button id="btnCancelar" onclick="cancelarVenta()" disabled class="bg-red-600 hover:bg-red-700 text-white text-xl font-bold py-4 px-6 rounded-xl uppercase shadow-lg transition disabled:opacity-30">
-                        ❌ Cancelar
+                         CANCELAR
                     </button>
                 </div>
             </div>
 
             <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-2xl flex flex-col items-center">
-                <h3 class="text-xl text-gray-400 font-bold mb-2 tracking-widest uppercase">Efectivo Ingresador (MDB)</h3>
+                <h3 class="text-xl text-gray-400 font-bold mb-2 tracking-widest uppercase">Dinero ingresado </h3>
                 <div id="displayRecibido" class="text-7xl font-mono font-bold text-green-500 mb-4 transition-all">$0.00</div>
                 
                 <button id="btnFinalizar" onclick="procesarCambio()" disabled class="w-full bg-orange-500 hover:bg-orange-600 text-white text-xl font-bold py-4 rounded-xl uppercase shadow-lg transition disabled:opacity-30 mb-4">
-                    Completar Operación y Dar Cambio
+                    DAR CAMBIO
                 </button>
 
                 <div class="w-full border-t border-gray-700 pt-4">
                     <p class="text-center text-xs text-gray-400 uppercase tracking-wider mb-3">Vías de Pago Electrónicas</p>
                     <div class="grid grid-cols-2 gap-4">
                         <button id="btnTarjeta" onclick="abrirPagoAlternativo('tarjeta')" disabled class="bg-indigo-600 hover:bg-indigo-700 text-white text-md font-bold py-3 rounded-xl uppercase shadow-lg transition disabled:opacity-30">
-                            💳 Tarjeta Terminal (+10%)
+                            💳 Pago con tarjeta (+4.7%)
                         </button>
                         <button id="btnTransferencia" onclick="abrirPagoAlternativo('transferencia')" disabled class="bg-teal-600 hover:bg-teal-700 text-white text-md font-bold py-3 rounded-xl uppercase shadow-lg transition disabled:opacity-30">
-                            🏦 SPEI / Transferencia
+                            🏦 Transferencia
                         </button>
                     </div>
                 </div>
@@ -107,13 +107,13 @@
         <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-2xl p-8 max-w-3xl w-full mx-4 text-center">
             <div class="animate-bounce mb-4"><span class="text-5xl">⚠️</span></div>
             <h2 class="text-3xl font-bold text-orange-400 mb-2 uppercase tracking-wide">Acción Manual Requerida</h2>
-            <p class="text-gray-300 text-lg mb-8">Suministra manualmente los siguientes billetes de la caja de resguardo:</p>
+            <p class="text-gray-300 text-lg mb-8">Devuelve los siguientes billetes al cliente:</p>
             <div id="contenedorBilletes" class="flex flex-wrap justify-center gap-6 mb-8"></div>
             <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 mb-8 max-w-md mx-auto">
-                <p class="text-gray-400 text-md">Restante automático en monedas: <br><span id="modalMonedas" class="text-green-400 font-bold text-3xl">$0.00</span></p>
+                <p class="text-gray-400 text-md">Restante en monedas: <br><span id="modalMonedas" class="text-green-400 font-bold text-3xl">$0.00</span></p>
             </div>
             <button id="btnConfirmarEntrega" class="w-full bg-green-600 hover:bg-green-500 text-white text-xl font-bold py-4 rounded-xl transition-all uppercase tracking-widest">
-                Confirmar Entrega Física
+                Confirmar Entrega 
             </button>
         </div>
     </div>
@@ -122,18 +122,18 @@
         <div class="bg-gray-800 rounded-2xl border border-gray-700 shadow-2xl p-8 max-w-md w-full mx-4 text-center">
             <div class="text-5xl mb-4" id="pagoAlternativoIcono">💳</div>
             <h2 class="text-2xl font-bold text-blue-400 mb-2 uppercase tracking-wide" id="pagoAlternativoTitulo">Pago Electrónico</h2>
-            <p class="text-gray-400 text-xs mb-6">Valida la transacción en el dispositivo externo antes de asentar la venta.</p>
+            <p class="text-gray-400 text-xs mb-6">Valida el pago antes de confirmar la venta.</p>
 
             <div class="bg-gray-900 p-4 rounded-xl border border-gray-700 mb-6 space-y-2 text-left font-mono text-sm">
                 <div class="flex justify-between text-gray-400"><span>Monto Neto:</span><span id="pagoAltSubtotal">$0.00</span></div>
-                <div id="rowComision" class="flex justify-between text-red-400"><span>Comisión Aplicada (10%):</span><span id="pagoAltComision">$0.00</span></div>
+                <div id="rowComision" class="flex justify-between text-red-400"><span>Comisión Aplicada (4.7%):</span><span id="pagoAltComision">$0.00</span></div>
                 <div class="border-t border-gray-700 my-2"></div>
-                <div class="flex justify-between text-lg font-bold text-green-400"><span>Total a Validar:</span><span id="pagoAltTotal">$0.00</span></div>
+                <div class="flex justify-between text-lg font-bold text-green-400"><span>Total :</span><span id="pagoAltTotal">$0.00</span></div>
             </div>
 
             <div class="flex gap-4">
                 <button onclick="cerrarPagoAlternativoModal()" class="flex-1 bg-gray-600 hover:bg-gray-500 text-white font-bold py-3 rounded-xl uppercase text-sm">Atrás</button>
-                <button onclick="confirmarPagoAlternativo()" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl uppercase text-sm">Validar Transacción</button>
+                <button onclick="confirmarPagoAlternativo()" class="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl uppercase text-sm">Validar Pago</button>
             </div>
         </div>
     </div>

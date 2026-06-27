@@ -12,7 +12,7 @@ from flask import Flask, render_template, request, session, redirect, url_for
 
 
 app = Flask(__name__)
-# async_mode='threading' permite que el bucle de la placa no choque con el servidor web
+
 socketio = SocketIO(app, async_mode='threading', cors_allowed_origins="*")
 app.secret_key = '6867'
 # Variables de estado global
@@ -287,29 +287,27 @@ def hacer_corte():
     
     # 2. Obtener todas las ventas que no tienen corte
     cursor.execute("""
-        SELECT v.id, v.monto_vendido, v.metodo_pago, v.fecha_hora, vend.nombre 
-        FROM ventas v JOIN vendedores vend ON v.vendedor_id = vend.id 
+        SELECT v.id, v.monto_vendido, v.monto_pagado, v.metodo_pago, v.fecha_hora, vend.nombre 
+        FROM ventas v 
+        JOIN vendedores vend ON v.vendedor_id = vend.id 
         WHERE v.corte_id IS NULL
     """)
     ventas = cursor.fetchall()
     
     if not ventas:
-        return {'status': 'error', 'msg': 'No hay ventas registradas en este turno para hacer corte.'}, 400
+        return {'status': 'error', 'msg': 'No hay ventas activas en el turno actual para realizar un corte.'}, 400
         
-    # 3. Calcular totales
     total_ef = sum(float(v['monto_vendido']) for v in ventas if v['metodo_pago'] == 'efectivo')
     total_ta = sum(float(v['monto_vendido']) for v in ventas if v['metodo_pago'] == 'tarjeta')
     total_tr = sum(float(v['monto_vendido']) for v in ventas if v['metodo_pago'] == 'transferencia')
     total_general = total_ef + total_ta + total_tr
 
-    # 4. Generar el documento PDF
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", 'B', 16)
-    pdf.cell(190, 10, txt="Corte de Caja - BoardDroid POS", ln=True, align='C')
-    pdf.set_font("Arial", size=12)
-    fecha_corte = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    pdf.cell(190, 10, txt=f"Fecha y Hora de Cierre: {fecha_corte}", ln=True, align='C')
+    pdf.cell(190, 10, txt="Corte de Caja", ln=True, align='C')
+    pdf.set_font("Arial", size=11)
+    pdf.cell(190, 10, txt=f"Generado el: {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", ln=True, align='C')
     pdf.ln(5)
     
     # Resumen Financiero
@@ -323,39 +321,45 @@ def hacer_corte():
     
     # Tabla de Ventas Individuales
     pdf.set_font("Arial", 'B', 10)
-    pdf.cell(20, 10, 'ID', 1)
-    pdf.cell(50, 10, 'Cajero', 1)
-    pdf.cell(40, 10, 'Metodo', 1)
-    pdf.cell(30, 10, 'Hora', 1)
-    pdf.cell(30, 10, 'Monto', 1)
+    pdf.cell(15, 8, 'ID', 1)
+    pdf.cell(45, 8, 'Operador', 1)
+    pdf.cell(30, 8, 'Metodo Pago', 1)
+    pdf.cell(40, 8, 'Fecha/Hora', 1)
+    pdf.cell(30, 8, 'Importe', 1)
+    pdf.cell(30, 8, 'Cambio', 1) 
     pdf.ln()
     
     pdf.set_font("Arial", size=10)
     for v in ventas:
-        pdf.cell(20, 10, str(v['id']), 1)
-        pdf.cell(50, 10, v['nombre'], 1)
-        pdf.cell(40, 10, v['metodo_pago'].upper(), 1)
-        pdf.cell(30, 10, v['fecha_hora'].strftime("%H:%M"), 1)
-        pdf.cell(30, 10, f"${float(v['monto_vendido']):.2f}", 1)
+        # 🔥 MODIFICACIÓN 3: Calculamos la diferencia matemática en tiempo de ejecución
+        monto_vendido = float(v['monto_vendido'])
+        monto_pagado = float(v['monto_pagado'])
+        
+        # Si fue pago con tarjeta/transferencia el cambio es 0, si no, calculamos la resta
+        cambio_dado = (monto_pagado - monto_vendido) if v['metodo_pago'] == 'efectivo' else 0.0
+        if cambio_dado < 0: cambio_dado = 0.0 # Validar contra flotantes negativos extraños
+
+        pdf.cell(15, 8, str(v['id']), 1)
+        pdf.cell(45, 8, v['nombre'], 1)
+        pdf.cell(30, 8, v['metodo_pago'].upper(), 1)
+        pdf.cell(40, 8, v['fecha_hora'].strftime("%d/%m/%Y %H:%M"), 1)
+        pdf.cell(30, 8, f"${monto_vendido:.2f}", 1)
+        pdf.cell(30, 8, f"${cambio_dado:.2f}", 1) # <-- Imprimimos el cambio
         pdf.ln()
         
     nombre_archivo = f"corte_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
-    ruta_pdf = f"static/cortes/{nombre_archivo}"
-    pdf.output(ruta_pdf)
+    ruta_relativa = f"static/cortes/{nombre_archivo}"
+    pdf.output(ruta_relativa)
     
-    # 5. Guardar el registro del corte y actualizar las ventas
-    cursor.execute("INSERT INTO cortes_caja (total_vendido, ruta_pdf) VALUES (?, ?)", (total_general, f"/{ruta_pdf}"))
+    cursor.execute("INSERT INTO cortes_caja (total_vendido, ruta_pdf) VALUES (?, ?)", (total_general, f"/{ruta_relativa}"))
     corte_id = cursor.lastrowid
     cursor.execute("UPDATE ventas SET corte_id = ? WHERE corte_id IS NULL", (corte_id,))
     conn.commit()
     
     cursor.close()
     conn.close()
-    
-    # Avisamos al Dashboard para que ponga los números en $0.00
     socketio.emit('notificar_nueva_venta', {'monto': 0})
-    
-    return {'status': 'ok', 'pdf_url': f"/{ruta_pdf}"}
+    return {'status': 'ok', 'pdf_url': f"/{ruta_relativa}"}
 
 @app.route('/dashboard')
 def dashboard():

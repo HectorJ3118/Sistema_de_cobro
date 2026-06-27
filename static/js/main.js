@@ -8,52 +8,6 @@ let cajeroActualId = null;
 let tipoPagoActual = '';
 let totalConComisionActual = 0.0;
 
-function hablar(texto) {
-    if ('speechSynthesis' in window) {
-        let mensaje = new SpeechSynthesisUtterance(texto);
-        mensaje.lang = 'es-MX';
-        mensaje.rate = 1.0;
-        window.speechSynthesis.speak(mensaje);
-    }
-}
-
-function reproducirSonido(tipo) {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const osc = ctx.createOscillator();
-    const gainNode = ctx.createGain();
-    
-    osc.connect(gainNode);
-    gainNode.connect(ctx.destination);
-    
-    if (tipo === 'moneda') {
-        // Sonido de moneda: Campanita rápida pero suave
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(1200, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.15);
-        gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-        osc.start(); 
-        osc.stop(ctx.currentTime + 0.15);
-    } else if (tipo === 'exito') {
-        // Sonido de éxito: Doble tono de validación
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(800, ctx.currentTime);
-        osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.15);
-        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.5); // Ahora dura medio segundo y decae suavemente
-        osc.start(); 
-        osc.stop(ctx.currentTime + 0.5);
-    } else if (tipo === 'error') {
-        // Sonido de error: Zumbido grave y largo
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(300, ctx.currentTime);
-        gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.7); // Ahora dura casi un segundo
-        osc.start(); 
-        osc.stop(ctx.currentTime + 0.7);
-    }
-}
-
 socket.on('dinero_ingresado', function(data) {
     if(ventaActiva) {
         montoRecibido += data.valor;
@@ -72,6 +26,55 @@ socket.on('inventario_actualizado', function(data) {
     document.getElementById('inv-5').innerText = data['5.0'] || 0;
     document.getElementById('inv-10').innerText = data['10.0'] || 0;
 });
+
+
+function hablar(texto) {
+    if ('speechSynthesis' in window) {
+        let mensaje = new SpeechSynthesisUtterance(texto);
+        mensaje.lang = 'es-MX';
+        mensaje.rate = 1.0;
+        window.speechSynthesis.speak(mensaje);
+    }
+}
+
+function reproducirSonido(tipo) {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    
+    osc.connect(gainNode);
+    gainNode.connect(ctx.destination);
+    
+    if (tipo === 'moneda') {
+       
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1600, ctx.currentTime + 0.15);
+        gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        osc.start(); 
+        osc.stop(ctx.currentTime + 0.15);
+    } else if (tipo === 'exito') {
+      
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.15);
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.5); 
+        osc.start(); 
+        osc.stop(ctx.currentTime + 0.5);
+    } else if (tipo === 'error') {
+        
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.01, ctx.currentTime + 0.7); 
+        osc.start(); 
+        osc.stop(ctx.currentTime + 0.7);
+    }
+}
+
+
 
 async function notificarEstadoBackend(activa) {
     try {
@@ -99,7 +102,7 @@ async function cargarVendedores() {
     const res = await fetch('/api/vendedores');
     const data = await res.json();
     const select = document.getElementById('vendedorSelect');
-    select.innerHTML = '<option value="">Seleccionar Operador...</option>';
+    select.innerHTML = '<option value="">Seleccionar cajera...</option>';
     data.vendedores.forEach(v => {
         let opt = document.createElement('option');
         opt.value = v.id; opt.innerText = v.nombre;
@@ -120,7 +123,7 @@ async function conectarHardware() {
         body: JSON.stringify({puerto: puerto})
     });
     
-    // 🔥 AGREGAMOS ESTA LÍNEA PARA LEER LA RESPUESTA DE PYTHON
+    
     const data = await res.json(); 
     
     if(res.ok) {
@@ -129,8 +132,9 @@ async function conectarHardware() {
         status.className = "font-bold mt-2 text-green-500 text-sm text-center";
         btn.innerText = "Listo";
         btn.className = "flex-1 bg-green-600 text-white py-2 rounded font-bold cursor-not-allowed";
+        setTimeout(pedirInventario, 2000);
     } else {
-        // 🔥 AHORA SÍ VERÁS EL ERROR REAL EN PANTALLA
+        
         alert("Fallo de puerto: " + data.msg); 
         btn.disabled = false; btn.innerText = "Conectar";
     }
@@ -139,7 +143,7 @@ async function conectarHardware() {
 async function iniciarSesion() {
     const id = document.getElementById('vendedorSelect').value;
     const pin = document.getElementById('inputPin').value;
-    if(!id || !pin) return alert("Completa tus credenciales de turno.");
+    if(!id || !pin) return alert("Ingresa tu PIN.");
 
     const res = await fetch('/api/login', {
         method: 'POST',
@@ -169,10 +173,10 @@ async function iniciarSesion() {
 }
 
 async function pedirPinAdmin(accion) {
-    let pinAdmin = prompt("🛡️ ACCIÓN RESTRINGIDA:\nIntroduce PIN de Administrador (Llave Maestra):");
+    let pinAdmin = prompt("Introduce PIN de Administrador :");
     if (!pinAdmin) return;
 
-    // Solo enviamos el PIN, el backend se encarga de buscar a los administradores
+    // Solo enviamos el PIN
     const res = await fetch('/api/auth_admin', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -194,14 +198,14 @@ async function pedirPinAdmin(accion) {
             document.getElementById('btnRefrescarPuertos').classList.remove('opacity-40');
             
             await fetch('/api/logout_admin', { method: 'POST' });
-            alert("Turno cerrado exitosamente por el Administrador.");
+            alert("Turno cerrado .");
         } 
         else if (accion === 'dashboard') {
             window.open("/dashboard", "_blank");
         }
     } else {
         const data = await res.json();
-        alert("❌ Acceso denegado: " + (data.msg || "PIN incorrecto."));
+        alert(" Acceso denegado: " + (data.msg || "PIN in recto."));
         reproducirSonido('error');
     }
 }
@@ -223,12 +227,12 @@ async function iniciarVenta() {
     document.getElementById('btnTransferencia').disabled = false;
     document.getElementById('displayRecibido').innerText = "$0.00";
     
-    hablar(`Total: ${Math.floor(montoACobrar)} pesos.`);
+    hablar(`El Total es de ${Math.floor(montoACobrar)} pesos.`);
 }
 
 async function cancelarVenta() {
     if (montoRecibido > 0) {
-        let conf = confirm(`El usuario ya ingresó $${montoRecibido.toFixed(2)} en efectivo. ¿Deseas cancelar y retener el monto en caja?`);
+        let conf = confirm(`El usuario ya ingresó $${montoRecibido.toFixed(2)} en efectivo. ¿Deseas cancelar ?`);
         if (!conf) return;
     }
     hablar("Venta cancelada.");
@@ -243,7 +247,7 @@ function abrirPagoAlternativo(tipo) {
     if (tipo === 'tarjeta') {
         document.getElementById('pagoAlternativoIcono').innerText = '💳';
         document.getElementById('pagoAlternativoTitulo').innerText = 'Pago con Tarjeta';
-        comision = Math.round((subtotal * 0.10) * 100) / 100;
+        comision = Math.round((subtotal * 0.047) * 100) / 100;
         document.getElementById('pagoAltComision').innerText = `$${comision.toFixed(2)}`;
         document.getElementById('rowComision').classList.remove('hidden');
     } else {
@@ -254,9 +258,24 @@ function abrirPagoAlternativo(tipo) {
 
     totalConComisionActual = Math.round((subtotal + comision) * 100) / 100;
     document.getElementById('pagoAltSubtotal').innerText = `$${subtotal.toFixed(2)}`;
-    document.getElementById('pagoAltTotal').innerText = `$${totalConComisionActual.toFixed(2)}`;
+    document.getElementById('pagoAltTotal').innerText = `$${totalConComisionActual}`;
     document.getElementById('modalPagoAlternativo').classList.remove('hidden');
+    const formateadorMx = new Intl.NumberFormat('es-MX', {
+        style: 'currency',
+        currency: 'MXN'
+    });
+
+    
+    let totalTextoVoz = formateadorMx.format(totalConComisionActual);
+
+   
+    if (tipo === 'tarjeta') {
+        hablar(`Total con comisión: ${totalTextoVoz}`);
+    } else {
+        hablar(`Total a transferir: ${totalTextoVoz}`);
+    }
 }
+
 
 function cerrarPagoAlternativoModal() {
     document.getElementById('modalPagoAlternativo').classList.add('hidden');
@@ -336,7 +355,7 @@ async function procesarCambio() {
         }
     }
 
-    if (resto > 0) return alert(`Monedas insuficientes en tolva. Faltan: $${resto.toFixed(2)}`);
+    if (resto > 0) return alert(`Monedas insuficientes. Faltan: $${resto.toFixed(2)}`);
     
     let totalMonedas = Object.entries(monedasDisp).reduce((acc, [den, cant]) => acc + (den * cant), 0);
     hablar(`Su cambio es de ${Math.floor(cambioTotal)} pesos.`);
@@ -372,7 +391,7 @@ async function guardarVentaBD(montoVendidoFinal, metodoPago) {
                 metodo_pago: metodoPago
             })
         });
-    } catch(e) { console.error("Fallo de almacenamiento de auditoría:", e); }
+    } catch(e) { console.error("Fallo de base de datos", e); }
 }
 
 function reiniciarVenta() {
@@ -388,10 +407,17 @@ function reiniciarVenta() {
     document.getElementById('btnCancelar').disabled = true;
     document.getElementById('btnTarjeta').disabled = true;
     document.getElementById('btnTransferencia').disabled = true;
+    setTimeout(pedirInventario, 2000);
 }
 
 async function pedirInventario() {
     await fetch('/api/inventario', { method: 'POST' });
 }
 
-window.onload = () => { cargarPuertos(); cargarVendedores(); };
+window.onload = () => { 
+    cargarPuertos(); 
+    cargarVendedores(); 
+    
+    // Pedir inventario automáticamente al abrir la página (por si la placa ya estaba conectada)
+    setTimeout(pedirInventario, 1000); 
+};
